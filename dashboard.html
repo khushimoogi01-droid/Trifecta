@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Road Safety</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h2 class="nav-logo">Road Safety</h2>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="map.html" class="nav-link">My Location</a></li>
+                <li><a href="navigation.html" class="nav-link">Navigation</a></li>
+                <li><a href="#" onclick="handleLogout()" class="nav-link">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="welcome-section">
+            <h1>Welcome to Road Safety Dashboard</h1>
+            <p id="welcomeUser"></p>
+        </div>
+
+        <div class="content-grid">
+            <div class="card">
+                <div class="card-icon">�️</div>
+                <h3>Safety Navigation</h3>
+                <p>Find safest routes with real-time hazard alerts, accident-prone zones, and turn-by-turn navigation guidance.</p>
+                <a href="navigation.html" class="btn-primary">Start Navigation</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">�📍</div>
+                <h3>Check Your Location</h3>
+                <p>View your current location on the map and get road safety information for your area.</p>
+                <a href="map.html" class="btn-primary">View Map</a>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">⚠️</div>
+                <h3>Safety Tips</h3>
+                <p>Learn important road safety tips and best practices to prevent accidents.</p>
+                <button onclick="showTips()" class="btn-primary">Learn More</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <h3>Statistics</h3>
+                <p>View road accident statistics and safety data for India.</p>
+                <button onclick="showStats()" class="btn-primary">View Stats</button>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">📞</div>
+                <h3>Emergency Contacts</h3>
+                <p>Get important emergency contact numbers and services.</p>
+                <button onclick="showContacts()" class="btn-primary">View Contacts</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tipsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTips()">&times;</span>
+            <h2>Road Safety Tips</h2>
+            <ul>
+                <li>Always wear a seatbelt while driving</li>
+                <li>Follow speed limits and traffic rules</li>
+                <li>Avoid driving under the influence</li>
+                <li>Don't use mobile phone while driving</li>
+                <li>Ensure proper vehicle maintenance</li>
+                <li>Check mirrors regularly</li>
+                <li>Take breaks during long drives</li>
+                <li>Wear helmets while riding a motorcycle</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Safety Navigation - Safety Intelligence Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .nav-map-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            height: calc(100vh - 80px);
+            gap: 0;
+            background: #0a0e27;
+        }
+
+        #navigationMap {
+            height: 100%;
+            width: 100%;
+            background: #1a1f3a;
+            position: relative;
+        }
+
+        .map-search-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 380px;
+            z-index: 400;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .search-input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-input-group label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-input-group input {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .search-input-group input:focus {
+            outline: none;
+            border-color: #3387f5;
+            box-shadow: 0 0 10px rgba(51, 135, 245, 0.3);
+        }
+
+        .autocomplete-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 401;
+            margin-top: -5px;
+        }
+
+        .autocomplete-list.show {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background: #f5f5f5;
+        }
+
+        .autocomplete-item i {
+            color: #3387f5;
+            width: 20px;
+        }
+
+        .location-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .location-controls button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-detect-location {
+            background: #3387f5;
+            color: white;
+        }
+
+        .btn-detect-location:hover {
+            background: #0052cc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(51, 135, 245, 0.3);
+        }
+
+        .btn-search-route {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-search-route:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-clear {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-clear:hover {
+            background: #e0e0e0;
+        }
+
+        /* Map Legend */
+        .map-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            max-width: 250px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 400;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Right Sidebar - Safety Panel */
+        .safety-panel {
+            background: linear-gradient(135deg, #1a1f3a 0%, #0f1429 100%);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .panel-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .route-stats {
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 3px solid #3387f5;
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .route-stats.active {
+            display: block;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .route-options {
+            display: none;
+        }
+
+        .route-options.active {
+            display: block;
+        }
+
+        .route-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .route-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(2px);
+        }
+
+        .route-card.selected {
+            border-color: #3387f5;
+            background: rgba(51, 135, 245, 0.15);
+        }
+
+        .route-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .safety-badge {
+            display: inline-block;
+            padding: 0px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-safe {
+            background: rgba(40, 167, 69, 0.3);
+            color: #5cdb7f;
+        }
+
+        .badge-moderate {
+            background: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+
+        .badge-risky {
+            background: rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
+        }
+
+        .route-details {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .route-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hazard-count {
+            background: rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
+            padding: 0 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .safety-tips-section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #3387f5;
+        }
+
+        .safety-tip {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            border-left: 2px solid #ffc107;
+        }
+
+        .emergency-section {
+            margin-top: 20px;
+        }
+
+        .emergency-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(220, 53, 69, 0.9);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .emergency-btn:hover {
+            background: rgba(220, 53, 69, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+
+        .black-spot-warning {
+            background: rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-left: 3px solid #dc3545;
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .black-spot-warning.active {
+            display: block;
+        }
+
+        .warning-title {
+            color: #ff6b6b;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-content {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+        }
+
+        /* Traffic & Weather Info */
+        .traffic-weather-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 400;
+            max-width: 300px;
+        }
+
+        .traffic-weather-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .traffic-weather-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .traffic-weather-icon {
+            font-size: 24px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .traffic-weather-info {
+            flex: 1;
+        }
+
+        .traffic-weather-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 2px;
+        }
+
+        .traffic-weather-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* GPS Marker Animation */
+        @keyframes pulse-gps {
+            0% {
+                box-shadow: 0 0 0 0 rgba(51, 135, 245, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(51, 135, 245, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(51, 135, 245, 0);
+            }
+        }
+
+        .gps-marker {
+            animation: pulse-gps 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .nav-map-container {
+                grid-template-columns: 1fr;
+            }
+
+            .safety-panel {
+                position: absolute;
+                right: 0;
+                top: 0;
+                height: 100%;
+                width: 300px;
+                border-left: 1px solid rgba(255, 255, 255, 0.1);
+                z-index: 500;
+                display: none;
+            }
+
+            .safety-panel.open {
+                display: flex;
+            }
+
+            .map-search-container {
+                right: 20px;
+            }
+
+            .traffic-weather-bar {
+                right: auto;
+                left: 20px;
+                bottom: 320px;
+                top: auto;
+            }
+
+            .panel-toggle {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                background: #3387f5;
+                border: none;
+                border-radius: 50%;
+                color: white;
+                cursor: pointer;
+                z-index: 400;
+                font-size: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 12px rgba(51, 135, 245, 0.4);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .map-search-container {
+                right: 10px;
+                left: 10px;
+                top: 10px;
+            }
+
+            .traffic-weather-bar {
+                left: 10px;
+                right: 10px;
+                bottom: auto;
+                top: 120px;
+                max-width: none;
+            }
+
+            .map-legend {
+                display: none;
+            }
+
+            .safety-panel {
+                width: 100%;
+            }
+        }
+
+        /* Turn-by-turn directions */
+        .directions-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .directions-panel.active {
+            display: block;
+        }
+
+        .direction-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+
+        .direction-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .direction-step-number {
+            color: #3387f5;
+            font-weight: 700;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        .direction-step-text {
+            color: rgba(255, 255, 255, 0.8);
+            flex: 1;
+        }
+
+        .direction-step-distance {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        body.light-theme .safety-panel {
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            color: #333;
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-theme .route-stats,
+        body.light-theme .route-card,
+        body.light-theme .directions-panel,
+        body.light-theme .direction-step {
+            background: rgba(0, 0, 0, 0.04);
+            color: #333;
+        }
+
+        body.light-theme .route-card {
+            border-color: transparent;
+        }
+
+        body.light-theme .route-card.selected {
+            border-color: #3387f5;
+            background: rgba(51, 135, 245, 0.1);
+        }
+
+        body.light-theme .direction-step:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        body.light-theme .stat-label,
+        body.light-theme .route-details,
+        body.light-theme .direction-step-distance {
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        body.light-theme .stat-value,
+        body.light-theme .direction-step-text {
+            color: #333;
+        }
+
+        body.light-theme .section-title {
+            color: #3387f5;
+        }
+
+        body.light-theme .safety-tip {
+            background: rgba(255, 193, 7, 0.1);
+            border-left-color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h2 class="nav-logo">Road Safety</h2>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="map.html" class="nav-link">My Location</a></li>
+                <li><a href="navigation.html" class="nav-link active">Navigation</a></li>
+                <li><a href="#" onclick="handleLogout()" class="nav-link">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="nav-map-container">
+        <!-- Map -->
+        <div id="navigationMap"></div>
+
+        <!-- Search and Controls -->
+        <div class="map-search-container">
+            <div class="search-wrapper">
+                <div class="search-input-group" style="position: relative;">
+                    <label>Current Location</label>
+                    <input 
+                        type="text" 
+                        id="currentLocationInput" 
+                        placeholder="Starting point"
+                        readonly
+                    >
+                </div>
+            </div>
+
+            <div class="search-wrapper">
+                <div class="search-input-group" style="position: relative;">
+                    <label>Destination</label>
+                    <input 
+                        type="text" 
+                        id="destinationInput" 
+                        placeholder="Search destination"
+                        autocomplete="off"
+                    >
+                    <div id="autocompleteList" class="autocomplete-list"></div>
+                </div>
+            </div>
+
+            <div class="location-controls">
+                <button class="location-controls" onclick="detectCurrentLocation()" title="Detect my location">
+                    <i class="fas fa-location-dot"></i>
+                    <span>Detect</span>
+                </button>
+                <button class="btn-search-route" onclick="searchRoute()">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <span>Find Route</span>
+                </button>
+                <button class="btn-clear" onclick="clearRoute()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Traffic & Weather Info -->
+        <div class="traffic-weather-bar">
+            <div class="traffic-weather-item">
+                <div class="traffic-weather-icon">🚗</div>
+                <div class="traffic-weather-info">
+                    <div class="traffic-weather-label">Traffic</div>
+                    <div class="traffic-weather-value" id="trafficStatus">Light</div>
+                </div>
+            </div>
+            <div class="traffic-weather-item">
+                <div class="traffic-weather-icon" id="weatherIcon">☀️</div>
+                <div class="traffic-weather-info">
+                    <div class="traffic-weather-label">Weather</div>
+                    <div class="traffic-weather-value" id="weatherStatus">Clear</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Legend -->
+        <div class="map-legend">
+            <div class="legend-title">
+                <i class="fas fa-map"></i> Legend
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #dc3545;"></div>
+                <span>Black Spot / High Accident</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff9800;"></div>
+                <span>Poorly Lit Road</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffc107;"></div>
+                <span>Sharp Turn</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3387f5;"></div>
+                <span>School Zone</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9c27b0;"></div>
+                <span>Speeding Hotspot</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #673ab7;"></div>
+                <span>Construction Area</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3387f5;"></div>
+                <span>Safest Route</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffc107;"></div>
+                <span>Moderate Route</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #dc3545;"></div>
+                <span>Risky Route</span>
+            </div>
+        </div>
+
+        <!-- Right Sidebar Safety Panel -->
+        <div class="safety-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-shield-heart"></i>Safety Intelligence
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <!-- Black Spot Warning -->
+                <div id="blackSpotWarning" class="black-spot-warning">
+                    <div class="warning-title">
+                        <i class="fas fa-exclamation-triangle"></i>Black Spots Alert
+                    </div>
+                    <div class="warning-content">
+                        <div id="blackSpotContent">This route passes through accident-prone zones. Drive carefully.</div>
+                    </div>
+                </div>
+
+                <!-- Route Statistics -->
+                <div id="routeStats" class="route-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Distance:</span>
+                        <span class="stat-value" id="routeDistance">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Duration:</span>
+                        <span class="stat-value" id="routeDuration">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Black Spots:</span>
+                        <span class="stat-value" id="blackSpotCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Safety Score:</span>
+                        <span class="stat-value" id="safetyScore">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Avg Risk Level:</span>
+                        <span class="stat-value" id="riskLevel">--</span>
+                    </div>
+                </div>
+
+                <!-- Turn-by-Turn Directions -->
+                <div id="directionsPanel" class="directions-panel">
+                    <div class="section-title">
+                        <i class="fas fa-directions"></i>Turn-by-Turn
+                    </div>
+                    <div id="directionsList"></div>
+                </div>
+
+                <!-- Route Options -->
+                <div id="routeOptions" class="route-options">
+                    <div class="section-title">
+                        <i class="fas fa-route"></i>Available Routes
+                    </div>
+                    <div id="routeOptionsList"></div>
+                </div>
+
+                <!-- Safety Tips -->
+                <div class="safety-tips-section">
+                    <div class="section-title">
+                        <i class="fas fa-star"></i>Safety Tips
+                    </div>
+                    <div id="safetyTipsList"></div>
+                </div>
+
+                <!-- Emergency Section -->
+                <div class="emergency-section">
+                    <button class="emergency-btn" onclick="callEmergency('police')">
+                        <i class="fas fa-phone"></i>Police (100)
+                    </button>
+                    <button class="emergency-btn" onclick="callEmergency('ambulance')">
+                        <i class="fas fa-ambulance"></i>Ambulance (102)
+                    </button>
+                    <button class="emergency-btn" onclick="callEmergency('fire')">
+                        <i class="fas fa-fire-extinguisher"></i>Fire (101)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Toggle for Mobile -->
+        <button class="panel-toggle" onclick="toggleSafetyPanel()">
+            <i class="fas fa-shield-heart"></i>
+        </button>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="navigation.js"></script>
+</body>
+</html>

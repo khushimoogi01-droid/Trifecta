@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Safety - Prevention of Road Accidents</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="login-logo"><i class="fas fa-shield-halved"></i></div>
+                <h1>Road Safety</h1>
+                <p class="subtitle">Prevention of Road Accidents</p>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="username" placeholder="Enter username" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="password" placeholder="Enter password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login">Sign In</button>
+                </form>
+                <p class="signup-link">Don't have an account? <a href="#" onclick="toggleSignup(event)">Sign Up</a></p>
+                <div id="errorMessage" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN APP (after login) ========== -->
+    <div id="appScreen" class="screen">
+
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>Road Safety</span>
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-table-columns"></i> Dashboard</a></li>
+                    <li><a href="#" class="nav-link" data-section="maps"><i class="fas fa-map-location-dot"></i> Maps</a></li>
+                    <li><a href="#" class="nav-link" data-section="community"><i class="fas fa-users"></i> Community</a></li>
+                </ul>
+                <div class="nav-right">
+                    <a href="tel:112" class="btn-sos"><i class="fas fa-phone"></i> SOS</a>
+                    <span id="userGreeting" class="user-greeting"></span>
+                    <button onclick="handleLogout()" class="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- ===== DASHBOARD SECTION ===== -->
+        <section id="section-dashboard" class="section active">
+            <div class="dashboard-container">
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h1 id="welcomeTitle">Welcome Back!</h1>
+                        <p>Stay safe on the roads. Explore tools below to navigate safely.</p>
+                    </div>
+                    <div class="welcome-stats">
+                        <div class="mini-stat"><span class="mini-stat-num">1.5L+</span><span class="mini-stat-label">Annual Deaths</span></div>
+                        <div class="mini-stat"><span class="mini-stat-num">4.6L+</span><span class="mini-stat-label">Accidents/Year</span></div>
+                        <div class="mini-stat"><span class="mini-stat-num">90%</span><span class="mini-stat-label">Human Error</span></div>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="card" onclick="switchSection('maps')">
+                        <div class="card-icon"><i class="fas fa-map-location-dot"></i></div>
+                        <h3>Maps</h3>
+                        <p>View your location on the map, search a destination, and see both points live.</p>
+                        <span class="card-action">Open Maps <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                    <div class="card" onclick="openModal('tipsModal')">
+                        <div class="card-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                        <h3>Safety Tips</h3>
+                        <p>Learn essential road safety tips and best practices to prevent accidents.</p>
+                        <span class="card-action">Learn More <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                    <div class="card" onclick="openModal('statsModal')">
+                        <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                        <h3>Statistics</h3>
+                        <p>View road accident statistics and safety data for India.</p>
+                        <span class="card-action">View Stats <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                    <div class="card" onclick="openModal('contactsModal')">
+                        <div class="card-icon"><i class="fas fa-phone-volume"></i></div>
+                        <h3>Emergency Contacts</h3>
+                        <p>Quick access to police, ambulance, fire, and helpline numbers.</p>
+                        <span class="card-action">View Contacts <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                    <div class="card" onclick="switchSection('community')">
+                        <div class="card-icon"><i class="fas fa-users"></i></div>
+                        <h3>Community Reports</h3>
+                        <p>Report road hazards, accidents, and unsafe conditions. Stay alert with live community feeds.</p>
+                        <span class="card-action">Open Reports <i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== MAPS SECTION ===== -->
+        <section id="section-maps" class="section">
+            <div class="map-dashboard">
+
+                <!-- Full-screen Map -->
+                <div id="mainMap" class="map-fullscreen"></div>
+
+                <!-- Map Top Bar -->
+                <div class="map-topbar">
+                    <div class="mtb-left">
+                        <div class="mtb-logo"><i class="fas fa-shield-halved"></i><span>SafeRoute AI</span></div>
+                    </div>
+                    <div class="mtb-search">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input type="text" id="mapSearchInput" placeholder="Search any location..." autocomplete="off">
+                        <button class="mtb-search-clear hidden" id="mapSearchClear" onclick="clearMapSearch()"><i class="fas fa-xmark"></i></button>
+                        <div id="mapSearchResults" class="map-search-dropdown"></div>
+                    </div>
+                    <div class="mtb-right">
+                        <div class="mtb-weather" id="mtbWeather"><i class="fas fa-cloud-sun"></i><span>28°C</span></div>
+                        <button class="mtb-icon-btn" id="notifBtn" onclick="toggleNotifPanel()"><i class="fas fa-bell"></i><span class="notif-badge" id="notifBadge">3</span></button>
+                        <button class="mtb-icon-btn" onclick="toggleMapTheme()"><i class="fas fa-circle-half-stroke" id="themeIcon"></i></button>
+                        <div class="mtb-avatar" id="mtbAvatar">A</div>
+                    </div>
+                </div>
+
+                <!-- AI Alert Banner -->
+                <div class="ai-alert-banner hidden" id="aiAlertBanner">
+                    <div class="ai-alert-content">
+                        <i class="fas fa-robot"></i>
+                        <span id="aiAlertText"></span>
+                    </div>
+                    <button onclick="dismissAiAlert()"><i class="fas fa-xmark"></i></button>
+                </div>
+
+                <!-- Notification Panel -->
+                <div class="notif-panel hidden" id="notifPanel">
+                    <div class="np-head"><i class="fas fa-bell"></i> Live Alerts <span class="np-count" id="npCount">3</span></div>
+                    <div class="np-list" id="npList"></div>
+                </div>
+
+                <!-- Left Analytics Panel -->
+                <div class="analytics-panel" id="analyticsPanel">
+                    <button class="ap-toggle" onclick="toggleAnalytics()"><i class="fas fa-chevron-left" id="apToggleIcon"></i></button>
+                    <div class="ap-content" id="apContent">
+                        <div class="ap-header"><i class="fas fa-brain"></i> AI Safety Dashboard</div>
+
+                        <div class="ap-card ap-safety-score">
+                            <div class="ap-card-label">Area Safety Score</div>
+                            <div class="safety-ring" id="safetyRing">
+                                <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fill" id="ringFill"/></svg>
+                                <div class="ring-value" id="ringValue">--</div>
+                            </div>
+                            <div class="safety-label" id="safetyLabel">Analyzing...</div>
+                        </div>
+
+                        <div class="ap-card">
+                            <div class="ap-card-label"><i class="fas fa-triangle-exclamation"></i> Nearby Incidents</div>
+                            <div class="ap-stat-row"><span>Accidents</span><span class="ap-stat-val red" id="statAccidents">0</span></div>
+                            <div class="ap-stat-row"><span>Potholes</span><span class="ap-stat-val orange" id="statPotholes">0</span></div>
+                            <div class="ap-stat-row"><span>Traffic Jams</span><span class="ap-stat-val yellow" id="statTraffic">0</span></div>
+                            <div class="ap-stat-row"><span>Floods</span><span class="ap-stat-val blue" id="statFloods">0</span></div>
+                            <div class="ap-stat-row"><span>Construction</span><span class="ap-stat-val gray" id="statConstruction">0</span></div>
+                        </div>
+
+                        <div class="ap-card">
+                            <div class="ap-card-label"><i class="fas fa-traffic-light"></i> Traffic Status</div>
+                            <div class="traffic-bar"><div class="traffic-fill" id="trafficFill" style="width:45%"></div></div>
+                            <div class="traffic-label" id="trafficLabel">Moderate</div>
+                        </div>
+
+                        <div class="ap-card">
+                            <div class="ap-card-label"><i class="fas fa-cloud-bolt"></i> Weather Alert</div>
+                            <div class="weather-alert-info" id="weatherAlertInfo">
+                                <i class="fas fa-sun"></i>
+                                <div><strong id="weatherCondition">Clear</strong><small id="weatherDetail">Good driving conditions</small></div>
+                            </div>
+                        </div>
+
+                        <div class="ap-card">
+                            <div class="ap-card-label"><i class="fas fa-users"></i> Community Pulse</div>
+                            <div class="ap-stat-row"><span>Active Reporters</span><span class="ap-stat-val" id="statReporters">24</span></div>
+                            <div class="ap-stat-row"><span>Reports (1hr)</span><span class="ap-stat-val" id="statReportsHr">7</span></div>
+                            <div class="ap-stat-row"><span>Verified Alerts</span><span class="ap-stat-val green" id="statVerified">5</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Layer Controls -->
+                <div class="map-layers-panel" id="layersPanel">
+                    <button class="layers-toggle" onclick="toggleLayers()"><i class="fas fa-layer-group"></i></button>
+                    <div class="layers-dropdown hidden" id="layersDropdown">
+                        <div class="ld-head">Map Layers</div>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('accidents')"><i class="fas fa-car-burst" style="color:#e74c3c"></i> Accidents</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('potholes')"><i class="fas fa-road-circle-exclamation" style="color:#e67e22"></i> Potholes</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('traffic')"><i class="fas fa-car" style="color:#f1c40f"></i> Traffic</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('floods')"><i class="fas fa-water" style="color:#3498db"></i> Floods</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('construction')"><i class="fas fa-helmet-safety" style="color:#95a5a6"></i> Construction</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('police')"><i class="fas fa-shield" style="color:#4285f4"></i> Police</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('hospitals')"><i class="fas fa-hospital" style="color:#2ecc71"></i> Hospitals</label>
+                        <label class="ld-item"><input type="checkbox" checked onchange="toggleMarkerLayer('unsafe')"><i class="fas fa-skull-crossbones" style="color:#c0392b"></i> Unsafe Zones</label>
+                    </div>
+                </div>
+
+                <!-- Bottom Action Bar -->
+                <div class="map-bottom-bar">
+                    <button class="mbb-btn mbb-locate" onclick="reLocateUser()"><i class="fas fa-location-crosshairs"></i><span>My Location</span></button>
+                    <button class="mbb-btn mbb-navigate" onclick="openNavPanel()"><i class="fas fa-route"></i><span>Navigate</span></button>
+                    <button class="mbb-btn mbb-report" onclick="openMapReport()"><i class="fas fa-flag"></i><span>Report</span></button>
+                    <button class="mbb-btn mbb-emergency" onclick="openEmergencyPanel()"><i class="fas fa-kit-medical"></i><span>Nearby</span></button>
+                </div>
+
+                <!-- Navigation Panel (slide-up) -->
+                <div class="nav-panel hidden" id="navPanel">
+                    <div class="navp-head">
+                        <h3><i class="fas fa-route"></i> AI Safe Navigation</h3>
+                        <button onclick="closeNavPanel()"><i class="fas fa-xmark"></i></button>
+                    </div>
+                    <div class="navp-inputs">
+                        <div class="navp-field"><i class="fas fa-circle" style="color:#4285F4;font-size:10px"></i><input type="text" id="navFrom" placeholder="Your location" readonly></div>
+                        <div class="navp-field"><i class="fas fa-circle" style="color:#EA4335;font-size:10px"></i><input type="text" id="navTo" placeholder="Enter destination..." autocomplete="off" oninput="handleNavAutocomplete(this.value)">
+                            <div id="navAutocomplete" class="nav-autocomplete-dropdown"></div>
+                        </div>
+                    </div>
+                    <div class="navp-options">
+                        <button class="navp-opt active" data-mode="safe" onclick="setNavMode('safe')"><i class="fas fa-shield"></i> Safest</button>
+                        <button class="navp-opt" data-mode="fast" onclick="setNavMode('fast')"><i class="fas fa-bolt"></i> Fastest</button>
+                        <button class="navp-opt" data-mode="low-risk" onclick="setNavMode('low-risk')"><i class="fas fa-heart"></i> Low Risk</button>
+                    </div>
+                    <div id="navRouteInfo" class="navp-route-info hidden">
+                        <div class="nri-stat"><i class="fas fa-road"></i><span id="nriDist">--</span></div>
+                        <div class="nri-stat"><i class="fas fa-clock"></i><span id="nriTime">--</span></div>
+                        <div class="nri-stat"><i class="fas fa-shield"></i><span id="nriSafety">--</span></div>
+                    </div>
+                    <button class="navp-go hidden" id="navGoBtn" onclick="startNavigation()"><i class="fas fa-play"></i> Start Navigation</button>
+                </div>
+
+                <!-- Emergency Nearby Panel -->
+                <div class="emergency-panel hidden" id="emergencyPanel">
+                    <div class="emp-head"><h3><i class="fas fa-kit-medical"></i> Emergency Services Nearby</h3><button onclick="closeEmergencyPanel()"><i class="fas fa-xmark"></i></button></div>
+                    <div class="emp-tabs">
+                        <button class="emp-tab active" onclick="showEmergencyTab('hospitals')"><i class="fas fa-hospital"></i> Hospitals</button>
+                        <button class="emp-tab" onclick="showEmergencyTab('police')"><i class="fas fa-shield"></i> Police</button>
+                    </div>
+                    <div class="emp-list" id="empList"></div>
+                </div>
+
+                <!-- Quick Report Overlay -->
+                <div class="quick-report hidden" id="quickReport">
+                    <div class="qr-card">
+                        <div class="qr-head"><h3><i class="fas fa-flag"></i> Quick Report</h3><button onclick="closeMapReport()"><i class="fas fa-xmark"></i></button></div>
+                        <div class="qr-types" id="qrTypes">
+                            <button onclick="quickReportSubmit('Accident')"><i class="fas fa-car-burst"></i><span>Accident</span></button>
+                            <button onclick="quickReportSubmit('Pothole')"><i class="fas fa-road-circle-exclamation"></i><span>Pothole</span></button>
+                            <button onclick="quickReportSubmit('Traffic Jam')"><i class="fas fa-car"></i><span>Traffic</span></button>
+                            <button onclick="quickReportSubmit('Road Flooding')"><i class="fas fa-water"></i><span>Flooding</span></button>
+                            <button onclick="quickReportSubmit('Construction')"><i class="fas fa-helmet-safety"></i><span>Construction</span></button>
+                            <button onclick="quickReportSubmit('Broken Signal')"><i class="fas fa-traffic-light"></i><span>Signal</span></button>
+                            <button onclick="quickReportSubmit('Unsafe Driving')"><i class="fas fa-gauge-high"></i><span>Reckless</span></button>
+                            <button onclick="quickReportSubmit('Road Block')"><i class="fas fa-road-barrier"></i><span>Blocked</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Route info pill -->
+                <div class="route-info-pill hidden" id="routeInfoPill">
+                    <i class="fas fa-route"></i>
+                    <span id="routeInfoText"></span>
+                    <button onclick="clearRoute()"><i class="fas fa-xmark"></i></button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===== COMMUNITY REPORTS SECTION ===== -->
+        <section id="section-community" class="section">
+            <div class="community-container">
+
+                <!-- Header -->
+                <div class="community-header">
+                    <div>
+                        <h1><i class="fas fa-users"></i> Community Road Safety Reports</h1>
+                        <p>Report hazards and stay alert with real-time community updates</p>
+                    </div>
+                    <button class="btn-new-report" onclick="toggleReportForm()"><i class="fas fa-plus"></i> New Report</button>
+                </div>
+
+                <!-- Report Form (collapsible) -->
+                <div id="reportFormPanel" class="report-form-panel">
+                    <div class="report-form-card">
+                        <div class="rf-head"><i class="fas fa-pen-to-square"></i> Report an Incident</div>
+                        <form id="incidentForm" onsubmit="submitReport(event)">
+                            <div class="rf-grid">
+                                <!-- Incident Type -->
+                                <div class="rf-group">
+                                    <label>Incident Type</label>
+                                    <div class="type-chips" id="typeChips">
+                                        <button type="button" class="type-chip" data-type="Accident"><i class="fas fa-car-burst"></i> Accident</button>
+                                        <button type="button" class="type-chip" data-type="Pothole"><i class="fas fa-road-circle-exclamation"></i> Pothole</button>
+                                        <button type="button" class="type-chip" data-type="Traffic Jam"><i class="fas fa-car"></i> Traffic Jam</button>
+                                        <button type="button" class="type-chip" data-type="Road Flooding"><i class="fas fa-water"></i> Road Flooding</button>
+                                        <button type="button" class="type-chip" data-type="Construction Work"><i class="fas fa-helmet-safety"></i> Construction</button>
+                                        <button type="button" class="type-chip" data-type="Broken Traffic Signal"><i class="fas fa-traffic-light"></i> Broken Signal</button>
+                                        <button type="button" class="type-chip" data-type="Unsafe Driving"><i class="fas fa-gauge-high"></i> Unsafe Driving</button>
+                                        <button type="button" class="type-chip" data-type="Road Block"><i class="fas fa-road-barrier"></i> Road Block</button>
+                                        <button type="button" class="type-chip" data-type="Animal on Road"><i class="fas fa-cow"></i> Animal on Road</button>
+                                        <button type="button" class="type-chip" data-type="Poor Street Lighting"><i class="fas fa-lightbulb"></i> Poor Lighting</button>
+                                        <button type="button" class="type-chip" data-type="Other"><i class="fas fa-circle-exclamation"></i> Other</button>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="rf-group">
+                                    <label for="reportDesc">Description</label>
+                                    <textarea id="reportDesc" rows="3" placeholder="Describe the incident in detail..." required></textarea>
+                                </div>
+
+                                <!-- Image Upload -->
+                                <div class="rf-group">
+                                    <label>Upload Image / Video Proof</label>
+                                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                                        <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="handleFileUpload(this)">
+                                        <div id="uploadPlaceholder"><i class="fas fa-cloud-arrow-up"></i><span>Click to upload or drag & drop</span><small>Supports JPG, PNG, MP4 (max 10MB)</small></div>
+                                        <div id="uploadPreview" class="upload-preview" style="display:none"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Location -->
+                                <div class="rf-group">
+                                    <label>Location</label>
+                                    <div class="location-row">
+                                        <button type="button" class="btn-detect-loc" onclick="detectReportLocation()"><i class="fas fa-location-crosshairs"></i> Auto-detect</button>
+                                        <span class="loc-status" id="reportLocStatus">No location set</span>
+                                    </div>
+                                    <div id="reportMapWrap" class="report-map-wrap">
+                                        <div id="reportMap" style="height:200px;border-radius:10px"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Severity -->
+                                <div class="rf-group">
+                                    <label>Severity Level</label>
+                                    <div class="severity-options" id="severityOptions">
+                                        <button type="button" class="sev-btn sev-low" data-sev="Low"><i class="fas fa-circle"></i> Low</button>
+                                        <button type="button" class="sev-btn sev-medium" data-sev="Medium"><i class="fas fa-circle"></i> Medium</button>
+                                        <button type="button" class="sev-btn sev-high" data-sev="High"><i class="fas fa-circle"></i> High</button>
+                                        <button type="button" class="sev-btn sev-critical" data-sev="Critical"><i class="fas fa-circle"></i> Critical</button>
+                                    </div>
+                                </div>
+
+                                <!-- Anonymous toggle -->
+                                <div class="rf-group rf-anon">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="anonToggle">
+                                        <span class="toggle-switch"></span>
+                                        Submit Anonymously
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="rf-actions">
+                                <button type="button" class="btn-cancel-report" onclick="toggleReportForm()">Cancel</button>
+                                <button type="submit" class="btn-submit-report"><i class="fas fa-paper-plane"></i> Submit Report</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="feed-header">
+                    <h2><i class="fas fa-rss"></i> Live Community Feed</h2>
+                    <div class="feed-filters" id="feedFilters">
+                        <button class="filter-chip active" data-filter="all">All</button>
+                        <button class="filter-chip" data-filter="Accident">Accidents</button>
+                        <button class="filter-chip" data-filter="Pothole">Potholes</button>
+                        <button class="filter-chip" data-filter="Traffic Jam">Traffic</button>
+                        <button class="filter-chip" data-filter="Critical">Critical</button>
+                    </div>
+                </div>
+                <div class="feed-grid" id="feedGrid">
+                    <!-- Cards injected by JS -->
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <!-- ========== MODALS ========== -->
+    <div id="tipsModal" class="modal-overlay" onclick="closeModal(event,'tipsModal')">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModalDirect('tipsModal')">&times;</button>
+            <h2><i class="fas fa-triangle-exclamation"></i> Road Safety Tips</h2>
+            <ul class="tips-list">
+                <li>Always wear a seatbelt while driving</li>
+                <li>Follow speed limits and traffic rules</li>
+                <li>Avoid driving under the influence of alcohol</li>
+                <li>Don't use mobile phone while driving</li>
+                <li>Ensure proper vehicle maintenance</li>
+                <li>Check mirrors regularly before lane change</li>
+                <li>Take breaks during long drives to avoid fatigue</li>
+                <li>Wear helmets while riding a motorcycle</li>
+                <li>Use indicators while turning or changing lanes</li>
+                <li>Maintain safe distance from the vehicle ahead</li>
+            </ul>
+        </div>
+    </div>
+    <div id="statsModal" class="modal-overlay" onclick="closeModal(event,'statsModal')">
+        <div class="modal-box modal-box-stats" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModalDirect('statsModal')">&times;</button>
+
+            <!-- City Stats (dynamic) -->
+            <div id="cityStatsSection" style="display:none;">
+                <h2 class="stats-section-title"><i class="fas fa-city"></i> <span id="cityStatsTitle">Your City</span> – Road Safety Stats</h2>
+                <div id="cityStatsGrid" class="stats-grid"></div>
+                <p class="stat-source" id="cityStatsSource"></p>
+                <div class="stats-divider"><span>India Overall</span></div>
+            </div>
+
+            <!-- India Stats (always shown) -->
+            <h2 class="stats-section-title"><i class="fas fa-flag"></i> Road Safety Statistics – India</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-num">4.6L+</div><div class="stat-desc">Accidents reported annually</div></div>
+                <div class="stat-card red"><div class="stat-num">1.5L+</div><div class="stat-desc">Lives lost every year</div></div>
+                <div class="stat-card yellow"><div class="stat-num">17/min</div><div class="stat-desc">Accidents per minute</div></div>
+                <div class="stat-card"><div class="stat-num">90%</div><div class="stat-desc">Caused by human error</div></div>
+                <div class="stat-card yellow"><div class="stat-num">18-35</div><div class="stat-desc">Most vulnerable age group</div></div>
+                <div class="stat-card red"><div class="stat-num">30%</div><div class="stat-desc">Due to speeding</div></div>
+            </div>
+            <p class="stat-source">Source: Ministry of Road Transport & Highways, Govt. of India</p>
+        </div>
+    </div>
+    <div id="contactsModal" class="modal-overlay" onclick="closeModal(event,'contactsModal')">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModalDirect('contactsModal')">&times;</button>
+            <h2><i class="fas fa-phone-volume"></i> Emergency Contacts</h2>
+            <div class="contacts-list">
+                <a href="tel:100" class="contact-item call-btn"><div class="contact-info"><i class="fas fa-shield"></i><strong>Police</strong></div><span class="call-number">100</span></a>
+                <a href="tel:108" class="contact-item call-btn"><div class="contact-info"><i class="fas fa-truck-medical"></i><strong>Ambulance</strong></div><span class="call-number">108</span></a>
+                <a href="tel:1078" class="contact-item call-btn"><div class="contact-info"><i class="fas fa-house-crack"></i><strong>Disaster Management</strong></div><span class="call-number">1078</span></a>
+                <a href="tel:1073" class="contact-item call-btn"><div class="contact-info"><i class="fas fa-road"></i><strong>Road Accident Emergency</strong></div><span class="call-number">1073</span></a>
+                <a href="tel:112" class="contact-item call-btn"><div class="contact-info"><i class="fas fa-phone"></i><strong>National Emergency</strong></div><span class="call-number">112</span></a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

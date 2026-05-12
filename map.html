@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Location - Road Safety</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        #map {
+            height: calc(100vh - 100px);
+            width: 100%;
+            z-index: 1;
+        }
+        .location-info {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            font-size: 14px;
+        }
+        .location-info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .location-info p {
+            margin: 8px 0;
+            color: #666;
+        }
+        .location-info button {
+            margin-top: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h2 class="nav-logo">Road Safety</h2>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
+                <li><a href="map.html" class="nav-link active">My Location</a></li>
+                <li><a href="navigation.html" class="nav-link">Navigation</a></li>
+                <li><a href="#" onclick="handleLogout()" class="nav-link">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="map"></div>
+    
+    <div class="location-info">
+        <h3>Your Location</h3>
+        <p><strong>Latitude:</strong> <span id="latitude">--</span></p>
+        <p><strong>Longitude:</strong> <span id="longitude">--</span></p>
+        <p><strong>Address:</strong> <span id="address">Loading...</span></p>
+        <p><strong>Accuracy:</strong> <span id="accuracy">--</span> meters</p>
+        <button onclick="getCurrentLocation()" class="btn-primary">Update Location</button>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <!-- Nominatim for reverse geocoding -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-control-geocoder/1.13.0/Control.Geocoder.js"></script>
+    
+    <script src="script.js"></script>
+    <script>
+        // Initialize map when page loads
+        window.addEventListener('load', function() {
+            if (!isLoggedIn()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            initializeMap();
+            getCurrentLocation();
+        });
+
+        let map;
+        let userMarker;
+
+        function initializeMap() {
+            // Initialize map centered on India
+            map = L.map('map').setView([20.5937, 78.9629], 5);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+        }
+
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser.');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('address').textContent = 'Getting location...';
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const accuracy = Math.round(position.coords.accuracy);
+
+                    // Update displayed values
+                    document.getElementById('latitude').textContent = lat.toFixed(6);
+                    document.getElementById('longitude').textContent = lon.toFixed(6);
+                    document.getElementById('accuracy').textContent = accuracy;
+
+                    // Center map on user location
+                    map.setView([lat, lon], 15);
+
+                    // Remove old marker if exists
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+
+                    // Add new marker for user location
+                    userMarker = L.marker([lat, lon], {
+                        icon: L.icon({
+                            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDMyIDQwIj48cGF0aCBmaWxsPSIjMzM4N2Y1IiBkPSJNMTYgMEM3LjE3IDE2LjE3IDE2IDE2IDE2IDI0YzcuOTczIDAgMTYtNy4xNiAxNi0xNlYweiIvPjwvc3ZnPg==',
+                            iconSize: [32, 40],
+                            iconAnchor: [16, 40],
+                            popupAnchor: [0, -40]
+                        })
+                    }).addTo(map).bindPopup('Your Location<br>Lat: ' + lat.toFixed(6) + '<br>Lon: ' + lon.toFixed(6));
+
+                    // Add circle showing accuracy
+                    L.circle([lat, lon], {
+                        radius: accuracy,
+                        color: '#3387f5',
+                        fillColor: '#3387f5',
+                        fillOpacity: 0.1,
+                        weight: 2
+                    }).addTo(map);
+
+                    // Get address using reverse geocoding
+                    getAddressFromCoordinates(lat, lon);
+                },
+                function(error) {
+                    console.error('Error:', error);
+                    alert('Unable to get your location. Please enable location services and try again.');
+                    document.getElementById('address').textContent = 'Location access denied';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function getAddressFromCoordinates(lat, lon) {
+            // Using OpenStreetMap Nominatim for reverse geocoding
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+                .then(response => response.json())
+                .then(data => {
+                    const address = data.address;
+                    const fullAddress = data.address.city || data.address.town || data.address.village || 'Unknown';
+                    document.getElementById('address').textContent = fullAddress;
+                })
+                .catch(error => {
+                    console.error('Geocoding error:', error);
+                    document.getElementById('address').textContent = 'Address lookup failed';
+                });
+        }
+    </script>
+</body>
+</html>
